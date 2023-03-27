@@ -1,0 +1,1 @@
+FILES+=drivers/limine_int.o drivers/postcard.o
