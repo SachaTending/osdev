@@ -44,7 +44,6 @@ extern "C" void _start()
     log("Calling constructors...\n");
     callConstructors();
     inc_bootstep();
-    log("Cores started\n");
     inc_bootstep();
     end();
 }
