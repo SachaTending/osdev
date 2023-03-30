@@ -182,10 +182,27 @@ void print_adapter(char c) // and here is my code
     limine_write((const char *)&c);
 }
 
+int printf_lock = 0;
+
+void lock() {
+    while (printf_lock == 1)
+    {
+        __builtin_ia32_pause();
+    }
+    printf_lock = 1;
+    
+}
+
+void release() {
+    printf_lock = 0;
+}
+
 void printf(const char * s, ...) // this code written by szhou42 
 {
+    lock();
     va_list ap;
     va_start(ap, s);
     vsprintf(NULL, print_adapter, s, ap);
     va_end(ap);
+    release();
 }

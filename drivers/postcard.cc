@@ -1,7 +1,6 @@
 #include "io.h"
 #include "common.h"
 #include "logger.h"
-
 bool postcard_ready = false;
 
 void postcard_log(const char *fmt) {

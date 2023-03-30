@@ -23,6 +23,7 @@ uint8_t bootstep = 0; /*
     1.Call constructors
     2.end();
 */
+
 int tick = 0;
 
 void inc_bootstep() {
@@ -32,7 +33,6 @@ void inc_bootstep() {
         postcard_send(bootstep);
     }
 }
-
 extern "C" void _start()
 {
     log("FloppaOS by TendingStream73\n");
@@ -43,6 +43,8 @@ extern "C" void _start()
     inc_bootstep();
     log("Calling constructors...\n");
     callConstructors();
+    inc_bootstep();
+    log("Cores started\n");
     inc_bootstep();
     end();
 }

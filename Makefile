@@ -79,7 +79,7 @@ kern: $(FILES)
 
 run: iso
 	@echo QEMU -cdrom image.iso
-	@$(QEMU) -cdrom image.iso -serial stdio -m 512m
+	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2
 
 .PHONY: clean cleanw
 
