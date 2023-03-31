@@ -6,17 +6,11 @@
 #include "common.h"
 #include "pci.h"
 
-void halt_if_previous_method_didnt_work() {
-    asm volatile ("hlt");
-    halt_if_previous_method_didnt_work();
-}
 
-void end() {
-    log("Kernel reached end, that sus\n");
+void end() {;
     log("Kernel halted, now.\n");
-    for (;;);
-    log("wtf, kernel didn't halted, how?");
-    halt_if_previous_method_didnt_work();
+    asm volatile ("cli");
+    for (;;) asm volatile ("hlt");
 }
 
 uint8_t bootstep = 0; /*
@@ -34,6 +28,12 @@ void inc_bootstep() {
         postcard_send(bootstep);
     }
 }
+
+void panic(const char *reason) {
+    log("Kernel panic!!!, reason:");printf(reason);
+    end();
+}
+
 void KernelStart()
 {
     log("FloppaOS by TendingStream73\n");
@@ -45,5 +45,6 @@ void KernelStart()
     log("Initializating...\n");
     pci_init();
     inc_bootstep();
+    assert( 1 == 0 );
     end();
 }
