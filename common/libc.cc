@@ -98,8 +98,3 @@ int atoi(char * string) {
     }
     return result;
 }
-#include "logger.h"
-
-cmab void libc_call() {
-    log("im libc\n");
-}

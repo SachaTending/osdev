@@ -4,6 +4,7 @@
 #include "printf.h"
 #include "logger.h"
 #include "common.h"
+#include "pci.h"
 
 void halt_if_previous_method_didnt_work() {
     asm volatile ("hlt");
@@ -20,7 +21,7 @@ void end() {
 
 uint8_t bootstep = 0; /*
     Bootstep list:
-    1.Call constructors
+    1.Init devices
     2.end();
 */
 
@@ -33,7 +34,7 @@ void inc_bootstep() {
         postcard_send(bootstep);
     }
 }
-extern "C" void _start()
+void KernelStart()
 {
     log("FloppaOS by TendingStream73\n");
     log("This kernel created because in old projects, im copied a lot of stuff, such as simple linker script\n");
@@ -41,8 +42,8 @@ extern "C" void _start()
     limine_bootloader_info_response *resp = limine_get_info();
     log("Im booted by: ");printf("%s version %s\n", resp->name, resp->version);
     inc_bootstep();
-    log("Calling constructors...\n");
-    callConstructors();
+    log("Initializating...\n");
+    pci_init();
     inc_bootstep();
     end();
 }
