@@ -1,1 +1,1 @@
-FILES+=kernel/bootstrap.o kernel/kernel.o
+FILES+=kernel/bootstrap.o kernel/kernel.o kernel/initrd.o
