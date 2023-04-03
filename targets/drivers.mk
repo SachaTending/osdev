@@ -1,1 +1,1 @@
-FILES+=drivers/limine_int.o drivers/postcard.o drivers/pci.o
+FILES+=drivers/limine_int.o drivers/postcard.o drivers/pci.o drivers/kbd.o drivers/pic.o

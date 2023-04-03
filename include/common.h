@@ -9,3 +9,5 @@ void panic(const char *reason);
 void ASSERT(const char *data, bool result, const char * file, int line, const char * func);
 
 #define assert(in) ASSERT(#in, in, __FILE__, __LINE__, __func__);
+
+void putpixel(int x,int y, int color);

@@ -11,6 +11,7 @@
         "initializer_list": "cpp",
         "cstring": "cpp",
         "*.tcc": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "cstdint": "cpp"
     }
 }

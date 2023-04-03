@@ -14,6 +14,12 @@ void end() {;
     for (;;) asm volatile ("hlt");
 }
 
+void halt() {
+    // Same as end, but no cli
+    log("Kernel halted.\n");
+    for (;;) asm volatile ("hlt");
+}
+
 uint8_t bootstep = 0; /*
     Bootstep list:
     1.Init base
@@ -35,6 +41,8 @@ void panic(const char *reason) {
     end();
 }
 void initrd_init();
+void kbd_init();
+void pic_init();
 
 void KernelStart()
 {
@@ -46,9 +54,11 @@ void KernelStart()
     log("Im booted by: ");printf("%s version %s\n", resp->name, resp->version);
     inc_bootstep();
     log("Initializating...\n");
+    pic_init();
+    kbd_init();
     initrd_init();
     pci_init();
     
     inc_bootstep();
-    end();
+    halt();
 }
