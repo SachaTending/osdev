@@ -1,5 +1,8 @@
 #include "io.h"
 #include "logger.h"
+#include "common.h"
+#include "module.h"
+
 
 logger kbd("PS/2 KBD");
 
@@ -67,6 +70,7 @@ void kbd_enable() {
     conf |= (1 << 0) | (1 << 6);
     outb(CMD, 0x60);
     outb(0x60, conf);
+    inb(0x60);
 }
 
 void kbd_init() {
@@ -105,3 +109,8 @@ void kbd_init() {
     }
     
 }
+
+MODULE kbd_mod = {
+    .name = {'k','b','d'},
+    .mod_entry = kbd_init
+};

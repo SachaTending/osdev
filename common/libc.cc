@@ -57,6 +57,7 @@ void* memcpy(void* dstptr, const void* srcptr, size_t size) {
 typedef void (*constructor)();
 extern constructor start_ctors;
 extern constructor end_ctors;
+
 void callConstructors(void)
 {
     for(constructor* i = &start_ctors;i != &end_ctors; i++)

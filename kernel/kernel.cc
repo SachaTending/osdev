@@ -7,6 +7,7 @@
 #include "pci.h"
 #include "initrd.h"
 #include "errors.h"
+#include "module.h"
 
 void end() {;
     log("Kernel halted, now.\n");
@@ -44,6 +45,9 @@ void initrd_init();
 void kbd_init();
 void pic_init();
 
+extern char mods_start;
+extern char mods_end;
+
 void KernelStart()
 {
     log("FloppaOS by TendingStream73\n");
@@ -55,10 +59,18 @@ void KernelStart()
     inc_bootstep();
     log("Initializating...\n");
     pic_init();
-    kbd_init();
+    //kbd_init();
     initrd_init();
     pci_init();
-    
+    log("Scanning for mods...\n");
+    for (char *i = &mods_start;i != &mods_end;i++) {
+        struct module *test = (struct module *)i;
+        if (test->magic[0] == 'M' && test->magic[1] == 'O' && test->magic[2] == 'D') {
+            log("Detected module ");printf("%s\n", test->name);
+            log("Starting it.\n");
+            test->mod_entry();
+        }
+    }
     inc_bootstep();
     halt();
 }

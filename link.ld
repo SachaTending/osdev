@@ -43,7 +43,12 @@ SECTIONS
     	end_ctors = .; /* constructor are cool */
         *(.data .data.*)
     } :data
-
+    .mods_info : ALIGN(100) {
+        mods_start = .;
+        KEEP(*( .mods_info ));
+        KEEP(*( .mods_info.* ));
+        mods_end = .;
+    }
     .bss : {
         *(COMMON)
         *(.bss .bss.*)

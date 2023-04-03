@@ -1,6 +1,7 @@
 #include "idt.h"
 #include "common.h"
 #include "printf.h"
+#include "io.h"
 
 // This whole code copied from osdev wiki's interrupts tutorial
 
@@ -18,6 +19,11 @@ extern "C" void exception_handler() {
 
 void kbd() {
     printf("kbd\n");
+}
+
+void generic() {
+    printf("generic irq triggered\n");
+    outb(0x20, 0x20);
 }
 
 #define SELECTOR 0x28
@@ -55,6 +61,9 @@ cmab void idt_init() {
     }
     idt_set_descriptor(32, kbd, 0x8E);
     idt_set_descriptor(33, kbd, 0x8E);
+    for (uint8_t vector=32; vector < 32+7; vector++) {
+        idt_set_descriptor(vector, generic, 0x8E);
+    }
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // load the new IDT
     __asm__ volatile ("sti"); // set the interrupt flag
     //int a = 0/0;

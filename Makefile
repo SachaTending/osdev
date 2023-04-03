@@ -54,7 +54,7 @@ KERNEL = out.kern
 
 # Build targets
 
-build: kern
+build: iso
 
 kern: $(FILES)
 	@echo LD $(KERNEL)
@@ -80,7 +80,7 @@ kern: $(FILES)
 
 run: iso
 	@echo QEMU -cdrom image.iso
-	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2
+	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2 -device sb16,audiodev=a -audiodev sdl,id=a
 
 .PHONY: clean cleanw
 
@@ -92,7 +92,7 @@ cleanw:
 	@echo DEL $(FILES) out.kern image.iso
 	-@del $(FILES) out.kern image.iso
 
-iso: build
+iso: kern
 	@echo CP limine/out.kern
 	@echo XORRISO image.iso
 	@cp out.kern limine/
