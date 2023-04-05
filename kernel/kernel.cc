@@ -8,17 +8,40 @@
 #include "initrd.h"
 #include "errors.h"
 #include "module.h"
+#include "io.h"
 
 void end() {;
     log("Kernel halted, now.\n");
     asm volatile ("cli");
     for (;;) asm volatile ("hlt");
 }
-void load_idt_pls() ;
+void load_idt_pls();
+
+
+#define PIC1_CMD                    0x20
+#define PIC1_DATA                   0x21
+#define PIC2_CMD                    0xA0
+#define PIC2_DATA                   0xA1
+
+void IRQ_set_mask(unsigned char IRQline) {
+    uint16_t port;
+    uint8_t value;
+
+    if(IRQline < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        IRQline -= 8;
+    }
+    value = inb(port) | (1 << IRQline);
+    outb(port, value);        
+}
+
 void halt() {
     // Same as end, but no cli
     log("Kernel halted.\n");
     load_idt_pls();
+    IRQ_set_mask(0);
     for (;;) asm volatile ("hlt");
 }
 
