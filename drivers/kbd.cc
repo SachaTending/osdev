@@ -57,19 +57,25 @@ void kbd_write(uint8_t cmd) {
 }
 
 void kbd_enable() {
-    kbd.log("Enabling ports...\n");
-    if (first_port_online) kbd_cmd(ENABLE_1_PORT);
-    if (second_port_online) kbd_cmd(ENABLE_2_PORT);
+    outb(CMD, 0xad);
+    outb(CMD, 0xa7);
     kbd.log("Resetting ports...\n");
     if (first_port_online) kbd_write(RESET_PORT);
     if (second_port_online) kbd_cmd(0xD4);kbd_write(RESET_PORT);
     kbd.log("Enabling interrupts...\n");
     kbd_cmd(0x20);
-    kbd_wait(1);
+    while ((inb(0x64) & 1) == 0);
     uint8_t conf = inb(DATA);
+    if ((conf & (1 << 5)) != 0) {
+        kbd.log("DEBUG: Detected mouse, enabling interrupt.\n");
+        conf |= (1 << 1);
+    }
     conf |= (1 << 0) | (1 << 6);
     outb(CMD, 0x60);
     outb(0x60, conf);
+    kbd.log("Enabling ports...\n");
+    if (first_port_online) kbd_cmd(ENABLE_1_PORT);
+    if (second_port_online) kbd_cmd(ENABLE_2_PORT);
     inb(0x60);
 }
 

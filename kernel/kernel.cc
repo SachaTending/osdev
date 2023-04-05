@@ -14,10 +14,11 @@ void end() {;
     asm volatile ("cli");
     for (;;) asm volatile ("hlt");
 }
-
+void load_idt_pls() ;
 void halt() {
     // Same as end, but no cli
     log("Kernel halted.\n");
+    load_idt_pls();
     for (;;) asm volatile ("hlt");
 }
 

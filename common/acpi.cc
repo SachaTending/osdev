@@ -107,9 +107,42 @@ struct FADT
     GenericAddressStructure X_GPE1Block;
 };
 
+struct [[gnu::packed]] MADTHeader
+{
+    ACPISDTHeader sdt;
+    uint32_t local_controller_addr;
+    uint32_t flags;
+    char entries_begin[];
+};
+
+struct [[gnu::packed]] MADTIso
+{
+	uint8_t type;
+	uint8_t length;
+	uint8_t bus_source;
+    uint8_t irq_source;
+    uint32_t gsi;
+    uint16_t flags;
+} redirects[256];
+
+struct IoApic
+{
+	uint8_t type;
+	uint8_t length;
+	uint8_t apic_id;
+	uint8_t reserved;
+	uint32_t addr;
+	uint32_t gsib;
+};
+
+int redirect_count = 0;
+
 struct RSDPDescriptor *rsdp;
 struct RSDT           *rsdt;
 struct FADT           *fadt;
+struct MADTHeader     *madt;
+
+extern uint32_t ioapic_addr;
 
 struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST
@@ -123,6 +156,8 @@ void *findFACP()
     {
         ACPISDTHeader *h = (ACPISDTHeader *) rsdt->OtherSDT[i];
         if (!memcmp(h->Signature, "FACP", 4))
+            l.log("Found FACP\n");
+            l.log("Signature: %s\n", h->Signature);
             return (void *) h;
     }
 
@@ -130,6 +165,24 @@ void *findFACP()
     return NULL;
 }
 
+void *findMADT()
+{
+    int entries = (rsdt->h.Length - sizeof(rsdt->h)) / 4;
+
+    for (int i = 0; i < entries; i++)
+    {
+        ACPISDTHeader *h = (ACPISDTHeader *) rsdt->OtherSDT[i];
+        if (h->Signature[0] == 'A') {
+            l.log("Found MADT\n");
+            l.log("Signature: %s\n", h->Signature);
+            return (void *) h;
+        }
+    }
+
+    // No MADT found
+    return NULL;
+}
+void RedirectIRQ(uint8_t irq, uint8_t vec, uint32_t delivery);
 void acpi_init() {
     l.log("RSDP: 0x%x\n", rsdp_request.response->address);  
     l.log("Revision: %u\n", rsdp_request.response->revision);
@@ -141,6 +194,31 @@ void acpi_init() {
     fadt = (struct FADT *)findFACP();
     l.log("FADT Location: 0x%x\n", (uint64_t)fadt);
     l.log("FADT: DSDT Location: 0x%x\n", fadt->Dsdt);
+    l.log("Searching for MADT...\n");
+    madt = (struct MADTHeader *)findMADT();
+    l.log("Parsing MADT...\n");
+    for (uint8_t* madt_ptr = (uint8_t*)madt->entries_begin; (uint64_t)madt_ptr < (uint64_t)madt + madt->sdt.Length; madt_ptr += *(madt_ptr + 1))
+	{
+		switch (*(madt_ptr))
+		{
+		case 0:
+			l.log("Found LAPIC\n");
+			break;
+		case 1:
+            ioapic_addr = (uint32_t)madt_ptr;
+			l.log("Found IOAPIC\n");
+			break;
+		case 2:
+			redirects[redirect_count] = *(MADTIso*)madt_ptr;
+			l.log("Found IRQ redirect for IOAPIC (%d -> %d)\n", redirects[redirect_count].irq_source, redirects[redirect_count].gsi);
+			redirect_count++;
+			break;
+		case 4:
+			break;
+		default:
+			l.log("MADT entry type %d\n", *(madt_ptr));
+		}
+	}
 }
 
 MODULE acpi_mod = {
