@@ -206,25 +206,25 @@ struct limine_framebuffer_request {
 
 LIMINE_DEPRECATED_IGNORE_START
 
-struct LIMINE_DEPRECATED limine_terminal;
+struct limine_terminal;
 
 typedef void (*limine_terminal_write)(struct limine_terminal *, const char *, uint64_t);
 typedef void (*limine_terminal_callback)(struct limine_terminal *, uint64_t, uint64_t, uint64_t, uint64_t);
 
-struct LIMINE_DEPRECATED limine_terminal {
+struct limine_terminal {
     uint64_t columns;
     uint64_t rows;
     LIMINE_PTR(struct limine_framebuffer *) framebuffer;
 };
 
-struct LIMINE_DEPRECATED limine_terminal_response {
+struct limine_terminal_response {
     uint64_t revision;
     uint64_t terminal_count;
     LIMINE_PTR(struct limine_terminal **) terminals;
     LIMINE_PTR(limine_terminal_write) write;
 };
 
-struct LIMINE_DEPRECATED limine_terminal_request {
+struct limine_terminal_request {
     uint64_t id[4];
     uint64_t revision;
     LIMINE_PTR(struct limine_terminal_response *) response;

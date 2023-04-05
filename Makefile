@@ -12,6 +12,7 @@ override CCFLAGS+=       \
     -fno-lto             \
     -fno-pie             \
     -fno-pic             \
+    -fpermissive         \
     -m64                 \
     -march=x86-64        \
     -mabi=sysv           \
@@ -80,7 +81,7 @@ kern: $(FILES)
 
 run: iso
 	@echo QEMU -cdrom image.iso
-	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2 -device sb16,audiodev=a -audiodev sdl,id=a
+	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2 -device sb16,audiodev=a -audiodev sdl,id=a -device rtl8139
 
 .PHONY: clean cleanw
 

@@ -29,24 +29,26 @@ void generic() {
 #define SELECTOR 0x28
 
 void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
+    uint64_t vec = (uint64_t)isr;
     idt_entry_t* descriptor = &idt[vector];
-    descriptor->isr_low        = (uint64_t)isr & 0xFFFF;
+    descriptor->isr_low        = (uint64_t)vec & 0xFFFF;
     descriptor->kernel_cs      = SELECTOR;
     descriptor->ist            = 0;
     descriptor->attributes     = flags;
-    descriptor->isr_mid        = ((uint64_t)isr >> 16) & 0xFFFF;
-    descriptor->isr_high       = ((uint64_t)isr >> 32) & 0xFFFFFFFF;
+    descriptor->isr_mid        = ((uint64_t)vec >> 16) & 0xFFFF;
+    descriptor->isr_high       = ((uint64_t)vec >> 32) & 0xFFFFFFFF;
     descriptor->reserved       = 0; // just for sure, this value is zero
 }
 
 void idt_set_descriptor(uint8_t vector, void (*isr)(), uint8_t flags) {
+    uint64_t vec = (uint64_t)isr;
     idt_entry_t* descriptor = &idt[vector];
-    descriptor->isr_low        = (uint64_t)isr & 0xFFFF;
+    descriptor->isr_low        = (uint64_t)vec & 0xFFFF;
     descriptor->kernel_cs      = SELECTOR;
     descriptor->ist            = 0;
     descriptor->attributes     = flags;
-    descriptor->isr_mid        = ((uint64_t)isr >> 16) & 0xFFFF;
-    descriptor->isr_high       = ((uint64_t)isr >> 32) & 0xFFFFFFFF;
+    descriptor->isr_mid        = ((uint64_t)vec >> 16) & 0xFFFF;
+    descriptor->isr_high       = ((uint64_t)vec >> 32) & 0xFFFFFFFF;
     descriptor->reserved       = 0; // just for sure, this value is zero
 }
 
@@ -61,7 +63,7 @@ cmab void idt_init() {
     }
     idt_set_descriptor(32, kbd, 0x8E);
     idt_set_descriptor(33, kbd, 0x8E);
-    for (uint8_t vector=32; vector < 32+7; vector++) {
+    for (uint8_t vector=32; vector < 32+16; vector++) {
         idt_set_descriptor(vector, generic, 0x8E);
     }
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // load the new IDT
