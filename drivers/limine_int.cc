@@ -34,12 +34,26 @@ limine_bootloader_info_response *limine_get_info() {
     return info_request.response;
 }
 
+limine_framebuffer_response *limine_get_fb() {
+    return framebuffer.response;
+}
+
 void putpixel(int x,int y, int color) {
     struct limine_framebuffer *screen = framebuffer.response->framebuffers[0];
     if (screen->memory_model == LIMINE_FRAMEBUFFER_RGB) {
-        unsigned where = x*screen->width + y*screen->pitch;
-        ((unsigned char*)screen->address)[where] = (color >> screen->blue_mask_shift);              // BLUE
-        ((unsigned char*)screen->address)[where + 1] = (color >> screen->green_mask_shift);   // GREEN
-        ((unsigned char*)screen->address)[where + 2] = (color >> screen->red_mask_shift);  // RED
+        uint32_t *where = (uint32_t *)(screen->address);
+        size_t row = (y * screen->pitch) / 4;
+        where[row + x] = color;
+    }
+}
+
+#define ARGB(a, r, g, b) (a << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF)
+
+void putpixel(int x,int y, RGB_t color) {
+    struct limine_framebuffer *screen = framebuffer.response->framebuffers[0];
+    if (screen->memory_model == LIMINE_FRAMEBUFFER_RGB) {
+        uint32_t *where = (uint32_t *)(screen->address);
+        size_t row = (y * screen->pitch) / 4;
+        where[row + x] = ARGB(color.a, color.r, color.g, color.b);
     }
 }

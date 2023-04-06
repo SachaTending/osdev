@@ -176,7 +176,6 @@ void vsprintf_helper(char * str, void (*putchar)(char), const char * format, uin
 }
 
 #include "limine_int.h"
-
 void print_adapter(char c) // and here is my code
 {
     limine_write((const char *)&c);
