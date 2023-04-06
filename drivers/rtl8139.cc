@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "pci.h"
 #include "module.h"
+#include "idt.h"
 
 uint16_t io_base;
 uint32_t mem_base;
@@ -35,10 +36,32 @@ void read_mac() {
 }
 
 void rtl8139_send(void *pack, uint32_t len) {
-    outl(io_base+TSD_array[reg_loc], (uint32_t)pack);
+    outl(io_base+TSAD_array[reg_loc], (uint32_t)pack);
     outl(io_base+TSD_array[reg_loc++], len);
+    printf("0x%x 0x%x %u 0x%x %d\n", (uint64_t)pack, (uint32_t)pack, len, TSD_array[reg_loc], reg_loc);
     if (reg_loc > 3) reg_loc=0;
 }
+
+void rtl8139_irq(struct stackframe_t *stack) {
+    rtl.log("INT\n");
+}
+
+
+uint8_t e1000_test_packet[] = 
+{
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, /* eth dest (broadcast) */
+    0x52, 0x54, 0x00, 0x12, 0x34, 0x56, /* eth source */
+    0x08, 0x06, /* eth type */
+    0x00, 0x01, /* ARP htype */
+    0x08, 0x00, /* ARP ptype */
+    0x06, /* ARP hlen */
+    0x04, /* ARP plen */
+    0x00, 0x01, /* ARP opcode: ARP_REQUEST */
+    0x52, 0x54, 0x00, 0x12, 0x34, 0x56, /* ARP hsrc */
+    169, 254, 13, 37, /* ARP psrc */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ARP hdst */
+    192, 168, 0, 137, /* ARP pdst */
+};
 
 void rtl8139_trig(pci_dev_t dev) {
     uint32_t ret = pci_get_bar(dev, 0);
@@ -50,9 +73,11 @@ void rtl8139_trig(pci_dev_t dev) {
     rtl.log("controller enabled.\n");
     outb(io_base+0x37, 0x10);
     rtl.log("waiting controller for reset.\n"); 
-    while((inb(io_base+0x37) & 0x10) != 0) {}
+    while((inb(io_base+0x37) & 0x10) != 0) {
+        rtl.log("wait\n");
+    }
     rtl.log("controller resetted.\n");
-    outl(io_base+0x30, (uint64_t)rx_buffer);
+    outl(io_base+0x30, (uint32_t)rx_buffer);
     outw(io_base+0x3c, 0x0005);
     outl(io_base+0x44, 0xf | (1 << 7));
     outb(io_base+0x37, 0x0C);
@@ -61,7 +86,8 @@ void rtl8139_trig(pci_dev_t dev) {
     uint32_t irq = pciConfigReadW(dev, 0x3C);
     irq = irq & 0x00ff;
     rtl.log("IRQ: %u\n", irq);
-    rtl8139_send(&irq, 1);
+    idt_set_handl(irq, rtl8139_irq);
+    rtl8139_send(&e1000_test_packet, sizeof(e1000_test_packet));
 }
 
 void rtl8139_init() {

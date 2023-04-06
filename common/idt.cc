@@ -27,14 +27,6 @@ __attribute__((interrupt)) void generic(struct interrupt_frame *f) {
     outb(0x20, 0x20);
 }
 
-
-struct stackframe_t
-{
-	uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
-	uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
-	uint64_t int_num, err_code, rip, cs, rflags, rsp, ss;
-};
-
 static inline unsigned long read_cr2(void)
 {
     unsigned long val;
@@ -43,6 +35,8 @@ static inline unsigned long read_cr2(void)
 }
 
 bool fixed = false;
+
+handler handlers[16] = {0,0,0,0,0,0,0,0,0};
 
 extern "C" void IntHandler(struct stackframe_t *stack) {
     if (stack->int_num < 32) {
@@ -67,7 +61,17 @@ extern "C" void IntHandler(struct stackframe_t *stack) {
         //asm volatile ("cli");
         //for (;;);
     } else {
-        printf("Interrupt!!!\n");
+        //printf("Interrupt!!! %u\n", stack->int_num);
+        handler h = handlers[stack->int_num-32];
+        if (h != NULL) {
+            h(stack);
+        } else {
+            printf("Unknown int %u\n", stack->int_num);
+        }
+        outb(0x20, 0x20);
+        if (stack->int_num > 40) {
+            outb(0xA0, 0x20);
+        }
     }
 }
 
@@ -123,6 +127,31 @@ void load_idt_pls() {
     __asm__ volatile ("lidt %0" :: "m"(idtr) : "memory"); // load the new IDT
     __asm__ volatile ("sti"); // set the interrupt flag
 }
+#define PIC1_CMD                    0x20
+#define PIC1_DATA                   0x21
+#define PIC2_CMD                    0xA0
+#define PIC2_DATA                   0xA1
+void IRQ_clear_mask(unsigned char IRQline) {
+    uint16_t port;
+    uint8_t value;
+
+    if(IRQline < 8) {
+        port = PIC1_DATA;
+    } else {
+        port = PIC2_DATA;
+        IRQline -= 8;
+    }
+    value = inb(port) & ~(1 << IRQline);
+    outb(port, value);        
+}
+
+void idt_set_handl(int vector, handler h) {
+    handlers[vector] = h;
+}
+
+void pic(struct stackframe_t *stack) {
+
+}
 
 // This part of code called from bootstrap
 cmab void idt_init() {
@@ -159,4 +188,10 @@ cmab void idt_init() {
 	outb(0x43, 0x36);
 	outb(0x40, divisor & 0xff);
 	outb(0x40, divisor >> 8);
+    for (unsigned char i = 0;i<255;i++) {
+        IRQ_clear_mask(i);
+    }
+    idt_set_handl(0, pic);
+    idt_set_handl(43-32, pic);
+    asm volatile ("hlt");
 }

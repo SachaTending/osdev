@@ -202,21 +202,22 @@ void acpi_init() {
 		switch (*(madt_ptr))
 		{
 		case 0:
-			l.log("Found LAPIC\n");
+			//l.log("Found LAPIC\n");
 			break;
 		case 1:
             ioapic_addr = (uint32_t)madt_ptr;
-			l.log("Found IOAPIC\n");
+			//l.log("Found IOAPIC\n");
 			break;
 		case 2:
 			redirects[redirect_count] = *(MADTIso*)madt_ptr;
-			l.log("Found IRQ redirect for IOAPIC (%d -> %d)\n", redirects[redirect_count].irq_source, redirects[redirect_count].gsi);
+			//l.log("Found IRQ redirect for IOAPIC (%d -> %d)\n", redirects[redirect_count].irq_source, redirects[redirect_count].gsi);
 			redirect_count++;
 			break;
 		case 4:
 			break;
 		default:
-			l.log("MADT entry type %d\n", *(madt_ptr));
+			//l.log("MADT entry type %d\n", *(madt_ptr));
+            break;
 		}
 	}
 }

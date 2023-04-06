@@ -16,3 +16,12 @@ typedef struct {
 	uint64_t	base;
 } __attribute__((packed)) idtr_t;
 uint8_t idt_alloc_vector();
+
+struct stackframe_t
+{
+	uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+	uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
+	uint64_t int_num, err_code, rip, cs, rflags, rsp, ss;
+};
+typedef void (*handler)(struct stackframe_t *stack);
+void idt_set_handl(int vector, handler h);
