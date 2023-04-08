@@ -3,6 +3,7 @@
 void limine_write(const char *fmt);
 limine_bootloader_info_response *limine_get_info();
 limine_framebuffer_response *limine_get_fb();
+limine_memmap_response *limine_get_memmap();
 
 typedef struct RGB
 {

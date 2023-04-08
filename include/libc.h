@@ -12,3 +12,5 @@ void callConstructors(void);
 void itoa(char *buf, unsigned long int n, int base);
 int atoi(char * string);
 int oct2bin(unsigned char *str, int size);
+
+char *malloc(uint64_t len);
