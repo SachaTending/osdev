@@ -12,4 +12,5 @@ typedef struct RGB
     int g;
     int b;
 } RGB_t;
+void putpixel(int x,int y, int color) ;
 void putpixel(int x,int y, RGB_t color);

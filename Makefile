@@ -59,7 +59,7 @@ build: iso
 
 kern: $(FILES)
 	@echo LD $(KERNEL)
-	@$(LD) $(FILES) $(LDFLAGS) -o out.kern
+	@$(LD) $(FILES) font.o img.o $(LDFLAGS) -o out.kern
 
 -include $(HEADER_DEPS)
 

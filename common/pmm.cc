@@ -1,6 +1,7 @@
 #include "libc.h"
 #include "logger.h"
 #include "common.h"
+#include "pmm.h"
 
 logger pmm("PMM");
 
@@ -27,14 +28,18 @@ void pmm_init(uint64_t start, uint64_t len) {
     pmm.log("end: 0x%x\n",end);
 }
 
+char *calloc(int a, int b) {
+    return malloc(a*b);
+}
+
 char *malloc(uint64_t len) {
-    if (end <= current) {
-        pmm.log("ERR: OUT OF MEMORY.\n");
-        assert(end >= current);
-    }
     entry *e = (entry *)current+1;
     memcpy(e->magic, USED_magic, 4);
     e->len = len;
     current += current+len+1;
+    if (end <= current) {
+        pmm.log("ERR: OUT OF MEMORY.\n");
+        assert(end >= current);
+    }
     return (char *)e+sizeof(entry);
 }

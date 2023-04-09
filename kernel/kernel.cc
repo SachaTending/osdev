@@ -150,7 +150,8 @@ void memmap_init() {
     log("base: 0x");printf("%x length: %u\n", m->base, m->length);
     pmm_init(m->base, m->length);
 }
-
+void psf_init();
+void tga_init();
 void KernelStart()
 {
     fb = limine_get_fb();
@@ -177,6 +178,8 @@ void KernelStart()
     log("memory allocated at: 0x");printf("%x\n", m);
     memcpy(m, "hi\n", 3);
     log("");printf("%s", m);
+    psf_init();
+    tga_init();
     //printf("\e[2J\e[H");
     //rectangle();
     halt();

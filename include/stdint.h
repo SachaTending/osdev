@@ -13,3 +13,5 @@ typedef long long size_t;
 typedef long int64_t;
 
 #define NULL 0
+
+#define USHRT_MAX 65535
