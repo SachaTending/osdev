@@ -179,6 +179,11 @@ void KernelStart()
     log("");printf("%s", m);
     psf_init();
     tga_init();
+    char *cxx_runtime_is_working = new char[50];
+    strcpy(cxx_runtime_is_working, "The libcxxruntime.cc is working!\n");
+    log(cxx_runtime_is_working);
+    delete cxx_runtime_is_working;
+    catsay_main("Im a catsay feature, programmed by krisvers, and added to kernel by TendingStream73, my github is https://github.com/krisvers/catsay/");
     //printf("\e[2J\e[H");
     //rectangle();
     halt();

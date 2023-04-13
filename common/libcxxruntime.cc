@@ -11,6 +11,11 @@ void *operator new(std::size_t size) {
     return malloc(size);
 }
 
+void *operator new[](std::size_t size) {
+    printf("runtime: allocating %u bytes..\n", size);
+    return malloc(size);
+}
+
 void operator delete(void *ptr) {
     free(ptr);
 }

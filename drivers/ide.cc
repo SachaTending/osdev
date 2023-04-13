@@ -1,6 +1,7 @@
 #include "io.h"
 #include "logger.h"
 #include "module.h"
+#include "ide.h"
 
 logger ide("IDE");
 
@@ -36,6 +37,25 @@ logger ide("IDE");
 uint16_t ide_buf[1024*1024];
 
 bool ide_pm,ide_ps,ide_sm,ide_ss;
+
+ide_dev devs[4] {
+    {
+        .bus = ATA_PRIMARY,
+        .drive = ATA_MASTER
+    },
+    {
+        .bus = ATA_PRIMARY,
+        .drive = ATA_SLAVE
+    },
+    {
+        .bus = ATA_SECONDARY,
+        .drive = ATA_MASTER
+    },
+    {
+        .bus = ATA_SECONDARY,
+        .drive = ATA_SLAVE
+    }
+};
 
 void ide_select_drive(uint8_t bus, uint8_t drive) {
     uint16_t port;

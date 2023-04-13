@@ -11,3 +11,6 @@ void ASSERT(const char *data, bool result, const char * file, int line, const ch
 #define assert(in) ASSERT(#in, in, __FILE__, __LINE__, __func__);
 
 void putpixel(int x,int y, int color);
+
+// features.cc
+int catsay_main(const char *text);
