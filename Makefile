@@ -57,7 +57,7 @@ KERNEL = out.kern
 
 build: iso
 
-kern: $(FILES)
+kern: $(FILES) imgs
 	@echo LD $(KERNEL)
 	@$(LD) $(FILES) font.o img.o $(LDFLAGS) -o out.kern
 
@@ -82,6 +82,14 @@ kern: $(FILES)
 run: iso
 	@echo QEMU -cdrom image.iso
 	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2 -device sb16,audiodev=a -audiodev sdl,id=a -device rtl8139
+
+imgs:
+	@echo GEN img.o, font.o
+	@cp font*.psf font.psf
+	@cp img*.tga img.tga
+	@objcopy -O elf64-x86-64 -B i386 -I binary img.tga img.o
+	@objcopy -O elf64-x86-64 -B i386 -I binary font.psf font.o
+	@rm img.tga font.psf
 
 .PHONY: clean cleanw
 

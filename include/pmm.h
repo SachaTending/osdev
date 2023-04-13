@@ -3,3 +3,4 @@
 
 char *calloc(int a, int b);
 char *malloc(uint64_t size);
+void free(void *addr);
