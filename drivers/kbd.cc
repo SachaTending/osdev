@@ -2,7 +2,7 @@
 #include "logger.h"
 #include "common.h"
 #include "module.h"
-
+#include "idt.h"
 
 logger kbd("PS/2 KBD");
 
@@ -55,7 +55,7 @@ void kbd_write(uint8_t cmd) {
     kbd_wait();
     outb(DATA, cmd);
 }
-
+bool kbd_in_init = false;
 void kbd_enable() {
     outb(CMD, 0xad);
     outb(CMD, 0xa7);
@@ -72,16 +72,23 @@ void kbd_enable() {
     }
     conf |= (1 << 0) | (1 << 6);
     outb(CMD, 0x60);
-    outb(0x60, conf);
+    //outb(0x60, conf);
     kbd.log("Enabling ports...\n");
     if (first_port_online) kbd_cmd(ENABLE_1_PORT);
     if (second_port_online) kbd_cmd(ENABLE_2_PORT);
     inb(0x60);
+    kbd_in_init = false;
 }
-
+void kbd_handl(stackframe_t *reg) {
+    if (kbd_in_init);
+    else inb(0x60);
+}
 void kbd_init() {
-    kbd.log("Initializating...\n");
+    kbd.log("Initializating...\n");\
+    idt_set_handl(1, kbd_handl);
+    return;
     // Get device type
+    kbd_in_init = true;
     kbd_wait();
     outb(CMD, TEST);
     kbd_wait(1);

@@ -43,13 +43,18 @@ void free(void *addr) {
 char *calloc(int a, int b) {
     return malloc(a*b);
 }
-
+bool is_free_found;
 char *malloc(uint64_t len) {
-    entry *e = (entry *)current+1;
-    memcpy(e->magic, USED_magic, 4);
-    e->len = len;
-    current += current+len+1;
+    entry *e;
     if (end <= current) {
+
+    } else {
+        e = (entry *)current+1;
+        memcpy(e->magic, USED_magic, 4);
+        e->len = len;
+        current += current+len+1;
+    }
+    if (end <= current && !is_free_found) {
         pmm.log("ERR: OUT OF MEMORY.\n");
         assert(end >= current);
     }

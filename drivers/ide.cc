@@ -119,6 +119,10 @@ void ide_init() {
     }
 }
 
+void ide_poll(uint16_t io) {
+    for (int i=0;i<4;i++);
+}
+
 MODULE ide_mod = {
     .name = {'I', 'D', 'E'},
     .mod_entry = ide_init,

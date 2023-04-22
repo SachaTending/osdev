@@ -176,8 +176,10 @@ void vsprintf_helper(char * str, void (*putchar)(char), const char * format, uin
 }
 
 #include "limine_int.h"
+void write_serial(char a);
 void print_adapter(char c) // and here is my code
 {
+    write_serial(c);
     limine_write((const char *)&c);
 }
 
@@ -186,7 +188,7 @@ int printf_lock = 0;
 void lock() {
     while (printf_lock == 1)
     {
-        __builtin_ia32_pause();
+        asm volatile ("pause");
     }
     printf_lock = 1;
     

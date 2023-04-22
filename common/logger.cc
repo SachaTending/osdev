@@ -5,6 +5,7 @@
 
 logger::logger(const char *prefix) {
     this->log_name = prefix;
+    //printf("Logging: Logger %s ready.\n", prefix);
 }
 void lock();
 void release();

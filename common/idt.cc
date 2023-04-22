@@ -62,6 +62,7 @@ extern "C" void IntHandler(struct stackframe_t *stack) {
         //for (;;);
     } else {
         //printf("Interrupt!!! %u\n", stack->int_num);
+        //printf("Unknown int %u\n", stack->int_num);
         handler h = handlers[stack->int_num-32];
         if (h != NULL) {
             h(stack);
@@ -148,9 +149,9 @@ void IRQ_clear_mask(unsigned char IRQline) {
 void idt_set_handl(int vector, handler h) {
     handlers[vector] = h;
 }
-
+extern int tick;
 void pic(struct stackframe_t *stack) {
-
+    tick++;
 }
 
 // This part of code called from bootstrap

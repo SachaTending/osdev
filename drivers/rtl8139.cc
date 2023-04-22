@@ -3,6 +3,9 @@
 #include "pci.h"
 #include "module.h"
 #include "idt.h"
+#include "pmm.h"
+#include "libc.h"
+#include "network.h"
 
 uint16_t io_base;
 uint32_t mem_base;
@@ -35,33 +38,37 @@ void read_mac() {
     mac_addr[5] = mac2 >> 8;
 }
 
-void rtl8139_send(void *pack, uint32_t len) {
+void rtl8139_send(uint32_t *pack, uint32_t len) {
     outl(io_base+TSAD_array[reg_loc], (uint32_t)pack);
     outl(io_base+TSD_array[reg_loc++], len);
-    printf("0x%x 0x%x %u 0x%x %d\n", (uint64_t)pack, (uint32_t)pack, len, TSD_array[reg_loc], reg_loc);
+    //printf("0x%x 0x%x %u 0x%x %d\n", (uint64_t)pack, (uint32_t)pack, len, TSD_array[reg_loc], reg_loc);
     if (reg_loc > 3) reg_loc=0;
 }
-
-void rtl8139_irq(struct stackframe_t *stack) {
-    rtl.log("INT\n");
+uint32_t rtl8139_current_packet_ptr;
+#define RX_READ_POINTER_MASK (~3)
+void rtl8139_recv_packet() {
+    uint16_t * packet = (uint16_t*)((&rx_buffer) + rtl8139_current_packet_ptr);
+    uint16_t packet_length = *(packet + 1);
+    packet = packet + 2;
+    void * packet_backup = (void *)malloc(packet_length);
+    memcpy(packet_backup, (const void *)packet, packet_length);
+    eth_handl_packet((eth_frame_t *)packet_backup, packet_length);
+    free(packet_backup);
+    rtl8139_current_packet_ptr = (rtl8139_current_packet_ptr + packet_length + 4 + 3) & RX_READ_POINTER_MASK;
+    if(rtl8139_current_packet_ptr > 8192)
+        rtl8139_current_packet_ptr -= 8192;
+    outw(io_base+0x38, rtl8139_current_packet_ptr-0x10);
 }
 
-
-uint8_t e1000_test_packet[] = 
-{
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, /* eth dest (broadcast) */
-    0x52, 0x54, 0x00, 0x12, 0x34, 0x56, /* eth source */
-    0x08, 0x06, /* eth type */
-    0x00, 0x01, /* ARP htype */
-    0x08, 0x00, /* ARP ptype */
-    0x06, /* ARP hlen */
-    0x04, /* ARP plen */
-    0x00, 0x01, /* ARP opcode: ARP_REQUEST */
-    0x52, 0x54, 0x00, 0x12, 0x34, 0x56, /* ARP hsrc */
-    169, 254, 13, 37, /* ARP psrc */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ARP hdst */
-    192, 168, 0, 137, /* ARP pdst */
-};
+#define ROK                 (1<<0)
+#define TOK                 (1<<2)
+void rtl8139_irq(struct stackframe_t *stack) {
+    rtl.log("INT\n");
+    uint16_t status = inw(io_base + 0x3e);
+    outw(io_base + 0x3E, 0x05);
+    if (status & TOK) rtl.log("Packet sended.\n");
+    else if (status & ROK) rtl.log("Packet received\n");rtl8139_recv_packet();
+}
 
 void rtl8139_trig(pci_dev_t dev) {
     uint32_t ret = pci_get_bar(dev, 0);
@@ -87,7 +94,6 @@ void rtl8139_trig(pci_dev_t dev) {
     irq = irq & 0x00ff;
     rtl.log("IRQ: %u\n", irq);
     idt_set_handl(irq, rtl8139_irq);
-    rtl8139_send(&e1000_test_packet, sizeof(e1000_test_packet));
 }
 
 void rtl8139_init() {
