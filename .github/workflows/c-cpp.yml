@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: apt install xorriso
+      run: sudo apt install xorriso nasm -y
     - name: make
       run: make iso
     - name: Upload a Build Artifact
