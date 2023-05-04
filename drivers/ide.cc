@@ -15,8 +15,8 @@ logger ide("IDE");
 #define ATA_MASTER           0x00
 #define ATA_SLAVE            0x01
 
-#define ATA_PRIMARY          0x00
-#define ATA_SECONDARY        0x01
+#define ATA_PRIMARY          ATA_MASTER
+#define ATA_SECONDARY        ATA_SLAVE
 
 #define ATA_REG_DATA         0x00
 #define ATA_REG_SECCOUNT0    0x02
@@ -26,11 +26,14 @@ logger ide("IDE");
 #define ATA_REG_HDDEVSEL     0x06
 #define ATA_REG_COMMAND      0x07
 #define ATA_REG_STATUS       0x07
+#define ATA_REG_ALTSTATUS    0x0C
 
 #define ATA_CMD_IDENTIFY     0xEC
+#define ATA_CMD_READ_PIO     0x20
 
 #define ATA_SR_BSY           0x80
 #define ATA_SR_ERR           0x01
+#define ATA_SR_DRQ           0x08
 
 #define ATA_IDENT_MODEL      54
 
@@ -58,8 +61,8 @@ ide_dev devs[4] {
 };
 
 void ide_select_drive(uint8_t bus, uint8_t drive) {
-    uint16_t port;
-    uint16_t cmd;
+    uint16_t port=0;
+    uint16_t cmd=0;
     // Select port
     if (bus == ATA_PRIMARY)        port = ATA_PRIMARY_IO + ATA_REG_HDDEVSEL;
     else if (bus == ATA_SECONDARY) port = ATA_SECONDARY_IO + ATA_REG_HDDEVSEL;
@@ -69,6 +72,12 @@ void ide_select_drive(uint8_t bus, uint8_t drive) {
     // And select drive
     outb(port, cmd);
 }
+
+void ide_select_drive(ide_dev dev) {
+    ide_select_drive(dev.bus, dev.drive);
+}
+
+void ide_select_drive(ide_dev *dev) {ide_select_drive(dev->bus, dev->drive);}
 
 uint8_t ide_identify(uint8_t bus, uint8_t drive) {
     uint16_t io = ATA_PRIMARY_IO;
@@ -119,8 +128,62 @@ void ide_init() {
     }
 }
 
+void ide_read_lba(void *buf, uint32_t lba, ide_dev dev) {
+    uint16_t io=ATA_PRIMARY_IO;
+    uint8_t drive=ATA_MASTER;
+    if(dev.bus==ATA_SECONDARY)io=ATA_SECONDARY_IO;
+    if(dev.drive==ATA_SLAVE)drive=ATA_SLAVE;
+    ide_select_drive(dev);
+    uint8_t cmd = (drive==ATA_MASTER?0xE0:0xF0);
+    uint8_t sbit = (drive==ATA_MASTER?0x00:0x010);
+    outb(io+ATA_REG_HDDEVSEL, (cmd|(uint8_t)(lba>>24&0x0F)));
+    outb(io+1,0x00);
+    outb(io+ATA_REG_SECCOUNT0,1);
+    outb(io+ATA_REG_LBA0,(uint8_t)(lba));
+    outb(io+ATA_REG_LBA1,(uint8_t)(lba>>8));
+    outb(io+ATA_REG_LBA2,(uint8_t)(lba>>16));
+    outb(io+ATA_REG_COMMAND,ATA_CMD_READ_PIO);
+    ide_poll(io);
+    for(int i=0;i<256;i++) {
+        uint16_t data=inw(io+ATA_REG_DATA);
+        *(uint16_t*)(buf+i*2)=data;
+    }
+    ide_400ns(io);
+}
+
+void ide_400ns(uint16_t io) {
+    for(int i=0;i<4;i++)inb(io+ATA_REG_ALTSTATUS);
+}
+void ide_soft_reset(uint8_t io) {
+    outb(io+7,0x4); // 7 is control register
+    ide_400ns(io);
+    outb(io+7, 0);
+}
 void ide_poll(uint16_t io) {
-    for (int i=0;i<4;i++);
+    int bsy_count = 0;
+    int drq_count = 0;
+    ide_400ns(io);
+bsy:
+    uint8_t status = inb(io+ATA_REG_STATUS);
+    if (bsy_count>3) {
+        ide.log("ERR: BSY Not cleaning, performing software reset...\n");
+        ide_soft_reset(io);
+        bsy_count=0;
+    }
+    if(status&ATA_SR_BSY)bsy_count++;goto bsy;
+drq:
+    status = inb(io+ATA_REG_STATUS);
+    if(status&ATA_SR_ERR) {
+        ide.log("ERR: ERR Set, performing software reset...\n");
+        ide_soft_reset(io);
+        goto drq;
+    }
+    if (drq_count>3) {
+        ide.log("ERR: DRQ Not cleaning, performing software reset...\n");
+        ide_soft_reset(io);
+        drq_count=0;
+    }
+    if (!(status & ATA_SR_DRQ))drq_count++;goto drq;
 }
 
 MODULE ide_mod = {
