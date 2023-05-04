@@ -25,6 +25,7 @@ override CCFLAGS+=       \
     -MMD                 \
     -c  		         \
     -I include			 \
+	-I include/cppbinds  \
 	-g                   \
     -D NO_GDT            \
 

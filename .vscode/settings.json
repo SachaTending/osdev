@@ -12,6 +12,8 @@
         "cstring": "cpp",
         "*.tcc": "cpp",
         "algorithm": "cpp",
-        "cstdint": "cpp"
+        "cstdint": "cpp",
+        "iostream": "cpp",
+        "ostream": "cpp"
     }
 }

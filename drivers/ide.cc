@@ -128,6 +128,12 @@ void ide_init() {
     }
 }
 
+static void ide_set_lba(uint32_t lba, uint16_t io) {
+    outb(io+ATA_REG_LBA0,(uint8_t)(lba));
+    outb(io+ATA_REG_LBA1,(uint8_t)(lba>>8));
+    outb(io+ATA_REG_LBA2,(uint8_t)(lba>>16));
+}
+
 void ide_read_lba(void *buf, uint32_t lba, ide_dev dev) {
     uint16_t io=ATA_PRIMARY_IO;
     uint8_t drive=ATA_MASTER;
@@ -139,9 +145,7 @@ void ide_read_lba(void *buf, uint32_t lba, ide_dev dev) {
     outb(io+ATA_REG_HDDEVSEL, (cmd|(uint8_t)(lba>>24&0x0F)));
     outb(io+1,0x00);
     outb(io+ATA_REG_SECCOUNT0,1);
-    outb(io+ATA_REG_LBA0,(uint8_t)(lba));
-    outb(io+ATA_REG_LBA1,(uint8_t)(lba>>8));
-    outb(io+ATA_REG_LBA2,(uint8_t)(lba>>16));
+    ide_set_lba(lba, io);
     outb(io+ATA_REG_COMMAND,ATA_CMD_READ_PIO);
     ide_poll(io);
     for(int i=0;i<256;i++) {

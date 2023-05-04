@@ -26,6 +26,11 @@ limine_memmap_request memmap {
     .id = LIMINE_MEMMAP_REQUEST
 };
 
+limine_kernel_file_request kern_file = {
+    .id = LIMINE_KERNEL_FILE_REQUEST,
+    .response = NULL
+};
+
 int x = 0;
 
 // When you creating a multiboot kernel, you using a 0xB8000 for printing text, but in limine, you can just call limine's write function
@@ -44,6 +49,10 @@ limine_framebuffer_response *limine_get_fb() {
 
 limine_memmap_response *limine_get_memmap() {
     return memmap.response;
+}
+
+limine_kernel_file_response *limine_get_kernel_file() {
+    return kern_file.response;
 }
 
 void putpixel(int x,int y, int color) {

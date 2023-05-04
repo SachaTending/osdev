@@ -1,1 +1,1 @@
-FILES+=kernel/bootstrap.o kernel/kernel.o kernel/initrd.o kernel/features.o
+FILES+=kernel/bootstrap.o kernel/kernel.o kernel/initrd.o kernel/features.o kernel/cpptest.o kernel/argparse.o

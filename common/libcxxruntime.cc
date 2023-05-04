@@ -19,6 +19,11 @@ void *operator new[](std::size_t size) {
 void operator delete(void *ptr) {
     free(ptr);
 }
+
+void operator delete[](void *ptr) {
+    free(ptr);
+}
+
 void operator delete(void *ptr, unsigned long sz) {
     free(ptr);
 }

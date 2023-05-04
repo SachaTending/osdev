@@ -178,13 +178,10 @@ void KernelStart()
     memcpy(m, "hi\n", 3);
     log("");printf("%s", m);
     psf_init();
-    tga_init();
-    char *cxx_runtime_is_working = new char[50];
-    strcpy(cxx_runtime_is_working, "The libcxxruntime.cc is working!\n");
-    log(cxx_runtime_is_working);
-    delete cxx_runtime_is_working;
-    catsay_main("Im a catsay feature, programmed by krisvers, and added to kernel by TendingStream73, my github is https://github.com/krisvers/catsay/");
+    // tga_init();
+    if (args::catsay)catsay_main("Im a catsay feature, programmed by krisvers, and added to kernel by TendingStream73, my github is https://github.com/krisvers/catsay/");
     //printf("\e[2J\e[H");
     //rectangle();
+    if (args::print_something) printf("Nice try!(webtv discord members will know it)\nTo continue, find the power off button on your pc, and press it\nIf you REALLY want to run it, pls just dont, just dont run it, this shit can destroy your entire system\n");assert(false);
     halt();
 }

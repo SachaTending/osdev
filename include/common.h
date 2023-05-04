@@ -14,3 +14,10 @@ void putpixel(int x,int y, int color);
 
 // features.cc
 int catsay_main(const char *text);
+
+// argparse.cc
+
+namespace args {
+    extern bool catsay;
+    extern bool print_something;
+};
