@@ -50,22 +50,73 @@ void pci_add_trig(void (*trigger)(pci_dev_t dev), uint16_t venID, uint16_t devID
         trig_pos = 0;
     }
 }
+#define PCI_MAX_BUS 255
+#define PCI_MAX_SLOT 32
+#define PCI_MAX_FUNC 32
+
+pci_dev_t pci_gen_dev(uint8_t bus, uint8_t slot, uint8_t func) {
+    pci_dev_t dev = {
+        .bus = bus,
+        .slot = slot,
+        .func = func
+    };
+    dev.bits.bus_num = bus;
+    dev.bits.function_num = func;
+    dev.bits.device_num = slot;
+    return dev;
+}
+
+pci_dev_t pci_get_dev(uint32_t venID, uint32_t devID) {
+    uint8_t bus = 0,slot = 0,func = 0;
+    uint32_t sus = 0;
+    while (sus < (PCI_MAX_BUS * PCI_MAX_SLOT * PCI_MAX_FUNC)) {
+        //printf("%u %u %u\n", bus, slot, func);
+        if (bus >= PCI_MAX_BUS) {
+            bus = 0;
+            slot++;
+        }
+        if (slot >= PCI_MAX_SLOT) {
+            slot = 0;
+            func++;
+        }
+        if (func >= PCI_MAX_FUNC) func = 0;
+        pci_dev_t dev = pci_gen_dev(bus, slot, func);
+        uint16_t vID = pciConfigReadW(dev, 0);
+        if (vID == venID) {
+            uint16_t dID = pciConfigReadW(dev, 2);
+            if (dID == devID) {
+                dev.devID = dID;
+                dev.venID = vID;
+                return dev;
+            }
+        }
+        bus++;
+        sus++;
+    }
+}
 
 void pci_init() {
     // This is bruteforce scan, because i dont want to recursive scan every bus
     pci_log.log("Scanning PCI Bus...\n");
-    for (uint8_t bus = 0;bus<255;bus++) {
-        for (uint8_t slot=0;slot<255;slot++) {
-            for (uint8_t func=0;func<8;func++) {
+    for (uint8_t bus = 0;bus<PCI_MAX_BUS;bus++) {
+        for (uint8_t slot=0;slot<PCI_MAX_SLOT;slot++) {
+            for (uint8_t func=0;func<PCI_MAX_FUNC;func++) {
                 pci_dev_t dev = {
                     .bus = bus,
                     .slot = slot,
                     .func = func
                 };
+                dev.bits.always_zero = 0;
+                dev.bits.bus_num = bus;
+                dev.bits.device_num = slot;
+                dev.bits.enable = 1;
+                dev.bits.function_num = func;
                 uint16_t venID = pciConfigReadW(dev, 0);
                 if(venID != 0xFFFF) // Imagine you created pci device with vendor id 0xFFFF
                 {
                     uint16_t devID = pciConfigReadW(dev, 2);
+                    dev.devID = devID;
+                    dev.venID = venID;
                     uint8_t headerType = (uint8_t)pciConfigReadW(dev, 0xe);
                     const char *htype = "unknown";
                     if (headerType == 0x0) {
@@ -78,6 +129,7 @@ void pci_init() {
                     pci_log.log("Found device, bus=%d slot=%d func=%d vendor=0x%x device=0x%x headerType=%s", bus, slot, func, venID, devID, htype);
                     if (headerType == 0x0) {
                         printf(" bar0=0x%x", pci_get_bar(dev, 0));
+                        printf(" bar4=0x%x", pci_get_bar(dev, 4));
                     }
                     printf("\n");
                     for (int i=0;i<MAX_TRIGGERS;i++) {
@@ -93,7 +145,17 @@ void pci_init() {
         }
     }
 }
-
+void pci_dma_init(pci_dev_t dev) {
+    dev.bits.enable = 1;
+    dev.bits.field_num = (0x04 & 0xFC) >> 2;
+    outl(0xCF8, dev.bits.bits);
+    uint16_t data = inw(0xCFC + (0x04 & 2));
+    if (!(data & (1 << 2))) {
+        data |= (1 <<  2);
+        outl(0xCF8, dev.bits.bits);
+        outl(0xCFC, data);
+    }
+}
 uint32_t pci_get_bar(pci_dev_t dev, int bar) {
     uint8_t bus = dev.bus;
     uint8_t slot = dev.slot;
@@ -107,6 +169,13 @@ uint32_t pci_get_bar(pci_dev_t dev, int bar) {
 
         // Write out the address
         outl(0xCF8, address);
+        uint32_t out = inl(0xCFC);
+        return out;
+    }
+    else if (bar == 4) {
+        dev.bits.enable = 1;
+        dev.bits.field_num = (0x20 & 0xFC) >> 2;
+        outl(0xCF8, dev.bits.bits);
         uint32_t out = inl(0xCFC);
         return out;
     }

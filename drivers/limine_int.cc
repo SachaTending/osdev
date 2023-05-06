@@ -33,7 +33,7 @@ limine_kernel_file_request kern_file = {
 
 int x = 0;
 
-// When you creating a multiboot kernel, you using a 0xB8000 for printing text, but in limine, you can just call limine's write function
+// When you creating a multiboot kernel, you using a 0xB8000 for printing text, but in limine, you can just call limine's write function(its being  deprecated in 5.x tree :( ))
 void limine_write(const char *fmt) {
     r.response->write(r.response->terminals[0], fmt, strlen(fmt));
     //x++;
