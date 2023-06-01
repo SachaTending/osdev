@@ -20,3 +20,4 @@ void ide_soft_reset(uint8_t io);
 void ide_400ns(uint16_t io);
 
 void ide_read_lba(void *buf, uint32_t lba, ide_dev dev);
+void ide_write_lba(uint32_t *data, uint32_t lba, ide_dev dev);

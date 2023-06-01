@@ -150,6 +150,10 @@ void ide_init() {
             char buf[512];
             ide_read_lba(&buf, 0, devs[0]);
             printf("%s\n", buf);
+            ide.log("writing...");
+            buf[0] = 'a';
+            buf[1] = ' ';
+            ide_write_lba((uint32_t *)&buf, 0, devs[0]);
         }
     }
 }
@@ -160,6 +164,24 @@ static void ide_set_lba(uint32_t lba, uint16_t io) {
     outb(io+ATA_REG_LBA2,(uint8_t)(lba>>16));
 }
 
+void ide_write_lba(uint32_t *data, uint32_t lba, ide_dev dev) {
+    uint16_t io=ATA_PRIMARY_IO;
+    uint8_t drive=ATA_MASTER;
+    if(dev.bus==ATA_SECONDARY)io=ATA_SECONDARY_IO;
+    if(dev.drive==ATA_SLAVE)drive=ATA_SLAVE;
+    ide_select_drive(dev);
+    uint8_t cmd = (drive==ATA_MASTER?0xE0:0xF0);
+    uint8_t sbit = (drive==ATA_MASTER?0x00:0x010);
+    outb(io+ATA_REG_HDDEVSEL, (cmd|(uint8_t)(lba>>24&0x0F)));
+    outb(io+ATA_REG_SECCOUNT0,1);
+    ide_set_lba(lba, io);
+    outb(io+ATA_REG_COMMAND, 0x30);
+    ide_poll(io);
+    for (int i=0;i<256;i++) {
+        outl(io, data[i]);
+        ide_400ns(io);
+    }
+}
 void ide_read_lba(void *buf, uint32_t lba, ide_dev dev) {
     uint16_t io=ATA_PRIMARY_IO;
     uint8_t drive=ATA_MASTER;
@@ -177,14 +199,15 @@ void ide_read_lba(void *buf, uint32_t lba, ide_dev dev) {
     //outb(io+1,0x00);
     outb(io+ATA_REG_SECCOUNT0,1);
     ide_set_lba(lba, io);
-    /*outb(io+ATA_REG_COMMAND,ATA_CMD_READ_PIO);
+#ifndef ATA_DMA_READ
+    outb(io+ATA_REG_COMMAND,ATA_CMD_READ_PIO);
     ide_poll(io);
     for(int i=0;i<256;i++) {
         uint16_t data=inw(io+ATA_REG_DATA);
         *(uint16_t*)(buf+i*2)=data;
     }
     ide_400ns(io);
-    */ // fuck pio, use dma instead
+#else
     outb(io+ATA_REG_COMMAND, 0xC8);
     outb(BMR_command, 0x8 | 0x1);
     while (1) {
@@ -199,6 +222,7 @@ void ide_read_lba(void *buf, uint32_t lba, ide_dev dev) {
             break;
         }
     }
+#endif
 }
 
 void ide_400ns(uint16_t io) {
@@ -221,7 +245,7 @@ bsy:
         ide_soft_reset(io);
         bsy_count=0;
     }
-    if(status&ATA_SR_BSY)bsy_count++;goto bsy;
+    if(status&ATA_SR_BSY){bsy_count++;goto bsy;}
 drq:
     status = inb(io+ATA_REG_STATUS);
     if(status&ATA_SR_ERR) {
@@ -234,7 +258,7 @@ drq:
         ide_soft_reset(io);
         drq_count=0;
     }
-    if (!(status & ATA_SR_DRQ))drq_count++;goto drq;
+    if (!(status & ATA_SR_DRQ)){drq_count++;goto drq;}
 }
 
 MODULE ide_mod = {
