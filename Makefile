@@ -82,7 +82,7 @@ kern: $(FILES) imgs
 
 run: iso
 	@echo QEMU -cdrom image.iso
-	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2 -hda ide_test -device sb16,audiodev=a -audiodev sdl,id=a -device rtl8139
+	@$(QEMU) -cdrom image.iso -serial stdio -m 512m -smp cores=2 -hda ide_test -device sb16,audiodev=a -audiodev sdl,id=a -device rtl8139,netdev=a -netdev user,hostfwd=udp::1200-:1200,id=a
 
 imgs:
 	@echo GEN img.o, font.o

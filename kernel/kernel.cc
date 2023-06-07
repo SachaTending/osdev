@@ -182,6 +182,6 @@ void KernelStart()
     if (args::catsay)catsay_main("Im a catsay feature, programmed by krisvers, and added to kernel by TendingStream73, my github is https://github.com/krisvers/catsay/");
     //printf("\e[2J\e[H");
     //rectangle();
-    if (args::print_something) printf("Nice try!(webtv discord members will know it)\nTo continue, find the power off button on your pc, and press it\nIf you REALLY want to run it, pls just dont, just dont run it, this shit can destroy your entire system\n");assert(false);
+    //if (args::print_something) printf("Nice try!(webtv discord members will know it)\nTo continue, find the power off button on your pc, and press it\nIf you REALLY want to run it, pls just dont, just dont run it, this shit can destroy your entire system\n");assert(false);
     halt();
 }

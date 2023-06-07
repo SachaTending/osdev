@@ -145,7 +145,12 @@ void pci_init() {
         }
     }
 }
+#define PCI_PRIV_PIO 0x1
+#define PCI_PRIV_MMIO 0x2
+#define PCI_PRIV_BUSMASTER 0x4
+#define SET_PRIVELEDGES
 void pci_dma_init(pci_dev_t dev) {
+#ifndef SET_PRIVELEDGES
     dev.bits.enable = 1;
     dev.bits.field_num = (0x04 & 0xFC) >> 2;
     outl(0xCF8, dev.bits.bits);
@@ -155,6 +160,16 @@ void pci_dma_init(pci_dev_t dev) {
         outl(0xCF8, dev.bits.bits);
         outl(0xCFC, data);
     }
+#else
+    uint16_t priv=pciConfigReadW(dev, 0x4);
+    priv &= ~0b111;
+    priv |= (PCI_PRIV_PIO | PCI_PRIV_BUSMASTER) & 0b111;
+    pci_log.log("priveledges: %u\n", priv);
+    dev.bits.enable = 1;
+    dev.bits.field_num = (0x4 & 0xFC) >> 2;
+    outl(0xCF8, dev.bits.bits);
+    outw(0xCFC, priv);
+#endif
 }
 uint32_t pci_get_bar(pci_dev_t dev, int bar) {
     uint8_t bus = dev.bus;

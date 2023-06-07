@@ -49,6 +49,9 @@ uint32_t rtl8139_current_packet_ptr;
 void rtl8139_recv_packet() {
     uint16_t * packet = (uint16_t*)((&rx_buffer) + rtl8139_current_packet_ptr);
     uint16_t packet_length = *(packet + 1);
+    rtl.log("length: %u\n", packet_length);
+    rtl.log("packet:\n");
+    printf("%s\n", rx_buffer);
     packet = packet + 2;
     void * packet_backup = (void *)malloc(packet_length);
     memcpy(packet_backup, (const void *)packet, packet_length);
@@ -65,9 +68,9 @@ void rtl8139_recv_packet() {
 void rtl8139_irq(struct stackframe_t *stack) {
     rtl.log("INT\n");
     uint16_t status = inw(io_base + 0x3e);
-    outw(io_base + 0x3E, 0x05);
     if (status & TOK) rtl.log("Packet sended.\n");
     else if (status & ROK) rtl.log("Packet received\n");rtl8139_recv_packet();
+    outw(io_base + 0x3E, 0x05);
 }
 
 void rtl8139_trig(pci_dev_t dev) {
@@ -75,6 +78,7 @@ void rtl8139_trig(pci_dev_t dev) {
     io_base = ret & (~0x3);
     mem_base = ret & (~0xf);
     rtl.log("Initializating controller...\n");
+    pci_dma_init(dev);
     rtl.log("io_base = 0x%x\n", io_base);
     outb(io_base+0x52, 0x0);
     rtl.log("controller enabled.\n");
@@ -84,7 +88,7 @@ void rtl8139_trig(pci_dev_t dev) {
         rtl.log("wait\n");
     }
     rtl.log("controller resetted.\n");
-    outl(io_base+0x30, (uint32_t)rx_buffer);
+    outl(io_base+0x30, (uint32_t)&rx_buffer);
     outw(io_base+0x3c, 0x0005);
     outl(io_base+0x44, 0xf | (1 << 7));
     outb(io_base+0x37, 0x0C);
