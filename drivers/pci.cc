@@ -9,6 +9,7 @@ typedef struct pci_trigger
 {
     uint16_t venID;
     uint16_t devID;
+    bool is_triggered = false;
     void (*trigger)(pci_dev_t dev);
 } pci_trigger_t;
 
@@ -51,7 +52,7 @@ void pci_add_trig(void (*trigger)(pci_dev_t dev), uint16_t venID, uint16_t devID
     }
 }
 #define PCI_MAX_BUS 255
-#define PCI_MAX_SLOT 32
+#define PCI_MAX_SLOT 255
 #define PCI_MAX_FUNC 32
 
 pci_dev_t pci_gen_dev(uint8_t bus, uint8_t slot, uint8_t func) {
@@ -134,9 +135,10 @@ void pci_init() {
                     printf("\n");
                     for (int i=0;i<MAX_TRIGGERS;i++) {
                         if (triggers[i].devID == devID) {
-                            if (triggers[i].venID == venID) {
+                            if (triggers[i].venID == venID and triggers[i].is_triggered == false) {
                                 pci_log.log("Detected trigger, starting...\n");
                                 triggers[i].trigger(dev);
+                                triggers[i].is_triggered = true;
                             }
                         }
                     }
@@ -148,23 +150,23 @@ void pci_init() {
 #define PCI_PRIV_PIO 0x1
 #define PCI_PRIV_MMIO 0x2
 #define PCI_PRIV_BUSMASTER 0x4
-#define SET_PRIVELEDGES
 void pci_dma_init(pci_dev_t dev) {
 #ifndef SET_PRIVELEDGES
     dev.bits.enable = 1;
     dev.bits.field_num = (0x04 & 0xFC) >> 2;
     outl(0xCF8, dev.bits.bits);
     uint16_t data = inw(0xCFC + (0x04 & 2));
+    pci_log.log("before: 0x%x\n", data);
     if (!(data & (1 << 2))) {
-        data |= (1 <<  2);
+        data |= (1 << 2);
         outl(0xCF8, dev.bits.bits);
         outl(0xCFC, data);
     }
+    pci_log.log("after: 0x%x\n", data);
 #else
     uint16_t priv=pciConfigReadW(dev, 0x4);
     priv &= ~0b111;
-    priv |= (PCI_PRIV_PIO | PCI_PRIV_BUSMASTER) & 0b111;
-    pci_log.log("priveledges: %u\n", priv);
+    priv |= (PCI_PRIV_PIO | PCI_PRIV_BUSMASTER | PCI_PRIV_MMIO) & 0b111;
     dev.bits.enable = 1;
     dev.bits.field_num = (0x4 & 0xFC) >> 2;
     outl(0xCF8, dev.bits.bits);

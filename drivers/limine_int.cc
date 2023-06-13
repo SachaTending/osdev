@@ -31,6 +31,10 @@ limine_kernel_file_request kern_file = {
     .response = NULL
 };
 
+limine_hhdm_request g_hhdm {
+    .id = LIMINE_HHDM_REQUEST
+};
+
 int x = 0;
 
 // When you creating a multiboot kernel, you using a 0xB8000 for printing text, but in limine, you can just call limine's write function(its being  deprecated in 5.x tree :( ))

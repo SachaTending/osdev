@@ -161,6 +161,7 @@ void KernelStart()
     log("This kernel created because in old projects, im copied a lot of stuff, such as simple linker script\n");
     log("(hello to OSDev(Discord))\n");
     log("kernel.c compiled at: ");printf("%s (mmm dd yyyy) %s (hh mm ss)\n", __DATE__, __TIME__);
+    log("VM Higher Half: ");printf("%u\n", VM_HIGHER_HALF);
     limine_bootloader_info_response *resp = limine_get_info();
     //for (;;);
     log("Im booted by: ");printf("%s version %s\n", resp->name, resp->version);
@@ -173,10 +174,6 @@ void KernelStart()
     start_modules(MOD_GENERIC);
     inc_bootstep();
     initrd_init();
-    char *m = malloc(512);
-    log("memory allocated at: 0x");printf("%x\n", m);
-    memcpy(m, "hi\n", 3);
-    log("");printf("%s", m);
     psf_init();
     // tga_init();
     if (args::catsay)catsay_main("Im a catsay feature, programmed by krisvers, and added to kernel by TendingStream73, my github is https://github.com/krisvers/catsay/");

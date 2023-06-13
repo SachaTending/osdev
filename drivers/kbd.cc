@@ -3,6 +3,7 @@
 #include "common.h"
 #include "module.h"
 #include "idt.h"
+#include "limine_int.h"
 
 logger kbd("PS/2 KBD");
 
@@ -55,28 +56,91 @@ void kbd_write(uint8_t cmd) {
     kbd_wait();
     outb(DATA, cmd);
 }
+
+void mouse_write(uint8_t data) {
+    int time_out=100000;
+    while (time_out--) {
+        if((inb(0x64) & 2) != 0) continue;
+    }
+    outb(0x64, 0xD4);
+    time_out=100000;
+    while (time_out--) {
+        if((inb(0x64) & 2) != 0) continue;
+    }
+    outb(0x60, data);
+}
+
+int mouse_x = 0, mouse_y = 0;
+
+RGB_t color = {
+    .a = 255,
+    .r = 255,
+    .g = 255,
+    .b = 255
+};
+
+void mouse_int(stackframe_t *stack) {
+    static uint8_t cycle = 0;
+    static char bytes[3];
+    int delay=1000;
+    switch (cycle)
+    {
+        case 0:
+            bytes[0] = inb(0x60);
+            cycle++;
+            while (delay--) {asm volatile("pause");}
+            delay = 1000;
+            break;
+        case 1:
+            bytes[1] = inb(0x60);
+            cycle++;
+            break;
+        case 2:
+            bytes[2] = inb(0x60);
+            kbd.log("%d %d\n", (bytes[1]), (bytes[2]));
+            cycle = 0;
+            mouse_x = mouse_x + (bytes[1]);
+            mouse_y = mouse_y - (bytes[2]);
+
+            if (mouse_x < 0) mouse_x = 0;
+            if (mouse_y < 0) mouse_y = 0;
+
+            if (mouse_x > 100) mouse_x = 100;
+            if (mouse_y > 100) mouse_y = 100;
+
+            //kbd.log("mouse: all cycles passed\n");
+            //kbd.log("x: %d y: %d\n", mouse_x, mouse_y);
+            putpixel(mouse_x, mouse_y, color);
+            break;
+
+    }
+}
 bool kbd_in_init = false;
 void kbd_enable() {
-    outb(CMD, 0xad);
-    outb(CMD, 0xa7);
-    kbd.log("Resetting ports...\n");
-    if (first_port_online) kbd_write(RESET_PORT);
-    if (second_port_online) kbd_cmd(0xD4);kbd_write(RESET_PORT);
+    //outb(CMD, 0xad);
+    //outb(CMD, 0xa7);
+    //kbd.log("Resetting ports...\n");
+    //if (first_port_online) kbd_write(RESET_PORT);
+    //if (second_port_online) kbd_cmd(0xD4);kbd_write(RESET_PORT);
+    kbd.log("Enabling ports...\n");
+    if (first_port_online) kbd_cmd(ENABLE_1_PORT);
+    if (second_port_online) kbd_cmd(ENABLE_2_PORT);
+    if (inb(0x60) != 0xfa) kbd.log("Mouse: controller returned value != 0xfa\n");
     kbd.log("Enabling interrupts...\n");
     kbd_cmd(0x20);
     while ((inb(0x64) & 1) == 0);
     uint8_t conf = inb(DATA);
-    if ((conf & (1 << 5)) != 0) {
+    if (second_port_online) {
         kbd.log("DEBUG: Detected mouse, enabling interrupt.\n");
-        conf |= (1 << 1);
+        conf = conf | 2;
     }
     conf |= (1 << 0) | (1 << 6);
     outb(CMD, 0x60);
-    //outb(0x60, conf);
-    kbd.log("Enabling ports...\n");
-    if (first_port_online) kbd_cmd(ENABLE_1_PORT);
-    if (second_port_online) kbd_cmd(ENABLE_2_PORT);
+    outb(0x60, conf);
     inb(0x60);
+    
+    mouse_write(0xF6);
+    mouse_write(0xF4);
     kbd_in_init = false;
 }
 char kbdus[128] = {
@@ -147,8 +211,8 @@ void kbd_init() {
         kbd_buf[i] = '\0';
     }
     idt_set_handl(1, kbd_handl);
-    return;
-    // Get device type
+    idt_set_handl(12, mouse_int);
+    // return;
     kbd_in_init = true;
     kbd_wait();
     outb(CMD, TEST);

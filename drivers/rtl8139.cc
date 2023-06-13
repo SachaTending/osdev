@@ -10,7 +10,7 @@
 uint16_t io_base;
 uint32_t mem_base;
 
-char rx_buffer[8192*1024+16];
+char * rx_buffer;
 char tx_buffer[8192*1024+16];
 
 uint8_t TSAD_array[4] = {0x20, 0x24, 0x28, 0x2C};
@@ -47,11 +47,11 @@ void rtl8139_send(uint32_t *pack, uint32_t len) {
 uint32_t rtl8139_current_packet_ptr;
 #define RX_READ_POINTER_MASK (~3)
 void rtl8139_recv_packet() {
-    uint16_t * packet = (uint16_t*)((&rx_buffer) + rtl8139_current_packet_ptr);
+    uint16_t * packet = (uint16_t*)((rx_buffer) + rtl8139_current_packet_ptr);
     uint16_t packet_length = *(packet + 1);
     rtl.log("length: %u\n", packet_length);
     rtl.log("packet:\n");
-    printf("%s\n", rx_buffer);
+    printf("%s\n", packet);
     packet = packet + 2;
     void * packet_backup = (void *)malloc(packet_length);
     memcpy(packet_backup, (const void *)packet, packet_length);
@@ -88,7 +88,9 @@ void rtl8139_trig(pci_dev_t dev) {
         rtl.log("wait\n");
     }
     rtl.log("controller resetted.\n");
-    outl(io_base+0x30, (uint32_t)&rx_buffer);
+    rx_buffer = new char[8192 + 1500 + 16];
+    outl(io_base+0x30, (uint32_t)rx_buffer);
+    rtl.log("buffer: 0x%x\n", (uint32_t)rx_buffer);
     outw(io_base+0x3c, 0x0005);
     outl(io_base+0x44, 0xf | (1 << 7));
     outb(io_base+0x37, 0x0C);

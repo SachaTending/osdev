@@ -1,6 +1,7 @@
 #pragma once
 #define cmab __attribute__((constructor)) // cmab - call me at boot
 #include "stdint.h"
+#include "limine.h"
 extern bool postcard_ready;
 void postcard_send(uint8_t code);
 
@@ -21,3 +22,10 @@ namespace args {
     extern bool catsay;
     extern bool print_something;
 };
+
+extern limine_hhdm_request g_hhdm; // limine_int.cc
+
+#define VM_HIGHER_HALF (g_hhdm.response->offset)
+
+#define phys_to_virt(addr) (addr+VM_HIGHER_HALF)
+#define virt_to_phys(addr) (addr-VM_HIGHER_HALF)
