@@ -29,3 +29,7 @@ extern limine_hhdm_request g_hhdm; // limine_int.cc
 
 #define phys_to_virt(addr) (addr+VM_HIGHER_HALF)
 #define virt_to_phys(addr) (addr-VM_HIGHER_HALF)
+
+#define	__BIT(__n) (1ULL << __n)
+#define __TEST(__val) ((__val) != 0)
+#define	__MASK(__n)	(__BIT(__n) - 1)

@@ -69,10 +69,15 @@ void rtl8139_irq(struct stackframe_t *stack) {
     rtl.log("INT\n");
     uint16_t status = inw(io_base + 0x3e);
     if (status & TOK) rtl.log("Packet sended.\n");
-    else if (status & ROK) rtl.log("Packet received\n");rtl8139_recv_packet();
+    else if (status & ROK) {
+        rtl.log("Packet received\n");
+        rtl8139_recv_packet();
+    }
     outw(io_base + 0x3E, 0x05);
 }
-
+uint32_t pack[16] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+};
 void rtl8139_trig(pci_dev_t dev) {
     uint32_t ret = pci_get_bar(dev, 0);
     io_base = ret & (~0x3);
@@ -100,6 +105,7 @@ void rtl8139_trig(pci_dev_t dev) {
     irq = irq & 0x00ff;
     rtl.log("IRQ: %u\n", irq);
     idt_set_handl(irq, rtl8139_irq);
+    rtl8139_send((uint32_t *)&pack, 16);
 }
 
 void rtl8139_init() {
