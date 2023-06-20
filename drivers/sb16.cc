@@ -2,6 +2,8 @@
 #include "logger.h"
 #include "module.h"
 #include "libc.h"
+#include "opl.h"
+#include "idt.h"
 
 // Ports
 #define DSP_RESET      0x226
@@ -25,6 +27,11 @@ MODULE sb16_mod = {
     .name = {'s', 'b', '1', '6'},
     .mod_entry = sb16_init
 };
+OPL opl_chip_sb16;
+
+void sb16_int(stackframe_t *reg) {
+    sb16.log("interrupt\n");
+}
 
 void sb16_dma_init() {
     sb16.log("Preparing DMA for card...\n");
@@ -45,10 +52,10 @@ void sb16_init() {
     outb(DSP_RESET, 0);
     uint8_t ret = inb(DSP_READ);
     if (ret == 0xAA) {
-        sb16.log("Found valid sb16 card\n");
+        sb16.info("Found valid sb16 card\n");
         outb(DSP_MIXER, 0x80);
         ret = inb(DSP_MIXER_DATA);
-        sb16.log("Card uses IRQ #");
+        sb16.info("Card uses IRQ #");
         switch (ret)
         {
             case 0x01:
@@ -68,8 +75,9 @@ void sb16_init() {
                 irq = 10;
                 break;
         }
+        idt_set_handl(irq, sb16_int);
         sb16_dma_init();
-        sb16.log("Preparing card...\n");
+        sb16.info("Preparing card...\n");
         outb(DSP_WRITE, 0x40);
         outb(DSP_WRITE, 165);
         outb(DSP_WRITE, 0xC8);
@@ -77,12 +85,14 @@ void sb16_init() {
         outb(DSP_WRITE, 0x00);
         outb(DSP_WRITE, 0xFE);
         outb(DSP_WRITE, 0x0F);
-        sb16.log("Clearing buffer...\n");
+        opl_chip_sb16.port_base = 0x220;
+        opl_chip_sb16.Detect();
+        sb16.info("Clearing buffer...\n");
         memset(buf, 0, BUF_LEN);
-        sb16.log("Card is ready to play!\n");
+        sb16.info("Card is ready to play!\n");
         outb(DSP_WRITE, 0xD1);
         outb(DSP_WRITE, 0xD6);
     } else {
-        sb16.log("Card not found.\n");
+        sb16.error("Card not found.\n");
     }
 }

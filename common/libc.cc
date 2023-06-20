@@ -135,7 +135,7 @@ int atoi(char * string) {
 
 void ASSERT(const char * data, bool result, const char * file, int line, const char * func) {
     if (result != true) {
-        libc.log("ASSERTATION FAILED AT %s:%s:%d: %s\n", file, func, line, data);
+        libc.error("ASSERTATION FAILED AT %s:%s:%d: %s\n", file, func, line, data);
         panic("ASSERT() ERROR\n");
     } else {
         

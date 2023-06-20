@@ -23,8 +23,51 @@ void logger::log(const char *fmt, ...) {
     release();
 }
 
+void logger::info(const char *fmt, ...) {
+    printf("\x1b[97m[%d][%s][INFO]: ", tick, this->log_name);
+    lock();
+    va_list ap;
+    va_start(ap, fmt);
+    vsprintf(NULL, print_adapter, fmt, ap);
+    va_end(ap);
+    release();
+}
+
+void logger::warning(const char *fmt, ...) {
+    printf("\x1b[93m[%d][%s][WARNING]: ", tick, this->log_name);
+    lock();
+    va_list ap;
+    va_start(ap, fmt);
+    vsprintf(NULL, print_adapter, fmt, ap);
+    va_end(ap);
+    release();
+    printf("\x1b[97m"); // Restore color
+}
+
+void logger::success(const char *fmt, ...) {
+    printf("\x1b[92m[%d][%s][SUCCESS]: ", tick, this->log_name);
+    lock();
+    va_list ap;
+    va_start(ap, fmt);
+    vsprintf(NULL, print_adapter, fmt, ap);
+    va_end(ap);
+    release();
+    printf("\x1b[97m"); // Restore color
+}
+
+void logger::error(const char *fmt, ...) {
+    printf("\x1b[91m[%d][%s][ERROR]: ", tick, this->log_name);
+    lock();
+    va_list ap;
+    va_start(ap, fmt);
+    vsprintf(NULL, print_adapter, fmt, ap);
+    va_end(ap);
+    release();
+    printf("\x1b[97m"); // Restore color
+}
+
 void log(const char *fmt) { // old logger
     LOG_START;
-    printf("Kernel: ");
+    printf("[Kernel]: ");
     printf(fmt);
 }

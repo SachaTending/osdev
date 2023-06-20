@@ -45,9 +45,9 @@ void PIC_remap(int offset1, int offset2)
 
 void pic_init() {
 	return;
-    pic.log("Remapping...\n");
+    pic.info("Remapping...\n");
     PIC_remap(0x20, 0x28);
-    pic.log("done.\n");
+    pic.info("done.\n");
     outb(0xa1, 0xff);
     outb(0x21, 0xff);
 }

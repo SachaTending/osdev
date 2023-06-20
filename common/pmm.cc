@@ -37,7 +37,7 @@ void free(void *addr) {
         if (!(e->magic[0] == 'F' && e->magic[1] == 'R' && e->magic[2] == 'E' && e->magic[3] == 'E')) pmm.log("WARN: Invalid magic: %s\n", e->magic); return;
     }
     if (e->magic[0] == 'U' && e->magic[1] == 'S' && e->magic [2] == 'E' && e->magic[3] == 'D') memcpy(e->magic, FREE_magic, 4);
-    else if (e->magic[0] == 'F' && e->magic[1] == 'R' && e->magic[2] == 'E' && e->magic[3] == 'E') pmm.log("WARN: Passed already free memory\n");
+    else if (e->magic[0] == 'F' && e->magic[1] == 'R' && e->magic[2] == 'E' && e->magic[3] == 'E') pmm.warning("Passed already free memory\n");
 }
 
 char *calloc(int a, int b) {
@@ -55,7 +55,7 @@ char *malloc(uint64_t len) {
         current += current+len+1;
     }
     if (end <= current && !is_free_found) {
-        pmm.log("ERR: OUT OF MEMORY.\n");
+        pmm.error("OUT OF MEMORY.\n");
         assert(end >= current);
     }
     return (char *)e+sizeof(entry);

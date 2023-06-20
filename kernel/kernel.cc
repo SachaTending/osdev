@@ -10,6 +10,8 @@
 #include "module.h"
 #include "io.h"
 
+static logger klog("Kernel");
+
 void end() {;
     log("Kernel halted, now.\n");
     asm volatile ("cli");
@@ -19,7 +21,7 @@ void load_idt_pls();
 
 void halt() {
     // Same as end, but no cli
-    log("Kernel halted.\n");
+    klog.info("Kernel halted.\n");
     load_idt_pls();
     for (;;) asm volatile ("hlt");
 }
@@ -41,7 +43,8 @@ void inc_bootstep() {
 }
 
 void panic(const char *reason) {
-    log("Kernel panic!!!, reason:");printf("%s", reason); // This is likely first pull request because Tigran#9100 told me to edit printf(reason); to printf("%s", reason);
+    //log("Kernel panic!!!, reason:");printf("%s", reason); // This is likely first pull request because Tigran#9100 told me to edit printf(reason); to printf("%s", reason);
+    klog.error("Kernel panic, reason: %s\n", reason);
     end();
 }
 void initrd_init();
@@ -52,12 +55,12 @@ extern char mods_start;
 extern char mods_end;
 
 void start_modules(int type) {
-    log("Starting modules with type ");printf("%d...\n", type);
+    //log("Starting modules with type ");printf("%d...\n", type);
     for (char *i = &mods_start;i != &mods_end;i++) {
         struct module *test = (struct module *)i;
         if (test->magic[0] == 'M' && test->magic[1] == 'O' && test->magic[2] == 'D' && test->type == type) {
-            log("Detected module ");printf("%s\n", test->name);
-            log("Starting it.\n");
+            //log("Detected module ");printf("%s\n", test->name);
+            //log("Starting it.\n");
             test->mod_entry();
         }
     }
@@ -130,12 +133,12 @@ const char *memmap_type2char(uint64_t type) {
 void pmm_init(uint64_t start, uint64_t len);
 void print_memmap() {
     for (int i=0;i<memmap2->entry_count;i++) {
-        log("");printf("%d: base: 0x%x type: %s length: %u\n",i, memmap2->entries[i]->base, memmap_type2char(memmap2->entries[i]->type), memmap2->entries[i]->length);
+        klog.info("%d: base: 0x%x type: %s length: %u\n",i, memmap2->entries[i]->base, memmap_type2char(memmap2->entries[i]->type), memmap2->entries[i]->length);
     }
 }
 
 void memmap_init() {
-    log("Initializating memmap...\n");
+    klog.info("Initializating memmap...\n");
     print_memmap();
     limine_memmap_entry *m = memmap2->entries[1];
     limine_memmap_entry *m2;
@@ -146,8 +149,8 @@ void memmap_init() {
             m = m2;
         }
     }
-    log("Founded biggest entry\n");
-    log("base: 0x");printf("%x length: %u\n", m->base, m->length);
+    klog.info("Founded biggest entry\n");
+    klog.info("base: 0x");printf("%x length: %u\n", m->base, m->length);
     pmm_init(m->base, m->length);
 }
 void psf_init();
@@ -157,16 +160,16 @@ void KernelStart()
     fb = limine_get_fb();
     memmap2 = limine_get_memmap();
     memmap_init();
-    log("FloppaOS by TendingStream73\n");
-    log("This kernel created because in old projects, im copied a lot of stuff, such as simple linker script\n");
-    log("(hello to OSDev(Discord))\n");
-    log("kernel.c compiled at: ");printf("%s (mmm dd yyyy) %s (hh mm ss)\n", __DATE__, __TIME__);
-    log("VM Higher Half: ");printf("%u\n", VM_HIGHER_HALF);
+    klog.info("FloppaOS by TendingStream73\n");
+    klog.info("This kernel created because in old projects, im copied a lot of stuff, such as simple linker script\n");
+    klog.info("(hello to OSDev(Discord))\n");
+    klog.info("kernel.c compiled at: ");printf("%s (mmm dd yyyy) %s (hh mm ss)\n", __DATE__, __TIME__);
+    klog.info("VM Higher Half: ");printf("%u\n", VM_HIGHER_HALF);
     limine_bootloader_info_response *resp = limine_get_info();
     //for (;;);
-    log("Im booted by: ");printf("%s version %s\n", resp->name, resp->version);
+    klog.info("Im booted by: %s version %s\n", resp->name, resp->version);
     inc_bootstep();
-    log("Initializating...\n");
+    klog.info("Initializating...\n");
     pic_init();
     //kbd_init();
     start_modules(MOD_PCI);
@@ -180,5 +183,9 @@ void KernelStart()
     //printf("\e[2J\e[H");
     //rectangle();
     //if (args::print_something) printf("Nice try!(webtv discord members will know it)\nTo continue, find the power off button on your pc, and press it\nIf you REALLY want to run it, pls just dont, just dont run it, this shit can destroy your entire system\n");assert(false);
+    klog.info("This is info\n");
+    klog.warning("This is warning\n");
+    klog.success("This is success\n");
+    klog.error("This is error\n");
     halt();
 }

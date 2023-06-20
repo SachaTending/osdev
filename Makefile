@@ -31,11 +31,11 @@ override CCFLAGS+=       \
 
 override LDFLAGS +=         \
     -nostdlib               \
-    -static                 \
+    -shared                 \
     -m elf_x86_64           \
     -z max-page-size=0x1000 \
     -T link.ld              \
-    -g
+    -g						
 
 ifeq ($(shell $(LD) --help 2>&1 | grep 'no-pie' >/dev/null 2>&1; echo $$?),0)
     override LDFLAGS += -no-pie
